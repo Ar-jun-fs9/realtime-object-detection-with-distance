@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real-Time Object Detection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-800">
+          🧠 Real-Time Object Detection with Distance Measurement
+        </h1>
+        <button
+          id="reset-btn"
+          class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition"
+        >
+          Reset All
+        </button>
+      </div>
+
+      <!-- Mode Selection -->
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-4">Select Mode</h2>
+        <div class="flex space-x-4">
+          <button
+            id="webcam-btn"
+            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition mode-btn"
+          >
+            Webcam Mode
+          </button>
+          <button
+            id="upload-btn"
+            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition mode-btn"
+          >
+            Upload Image Mode
+          </button>
+        </div>
+      </div>
+
+      <!-- Webcam Section -->
+      <div id="webcam-section" class="hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">Webcam Detection</h3>
+          <button
+            id="stop-webcam"
+            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+          >
+            Stop
+          </button>
+        </div>
+        <div class="flex flex-col lg:flex-row gap-4">
+          <div
+            id="webcam-container"
+            class="w-full max-w-4xl mx-auto border rounded bg-gray-200 flex items-center justify-center h-[32rem]"
+          >
+            <p class="text-gray-500">Click "Webcam Mode" to start stream</p>
+          </div>
+          <div class="w-full lg:w-80 bg-gray-50 p-4 rounded">
+            <h4 class="font-semibold mb-2">Current Detections</h4>
+            <ul id="webcam-detections" class="text-sm space-y-1"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload Section -->
+      <div id="upload-section" class="hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">Upload Image</h3>
+          <button
+            id="clear-upload"
+            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+          >
+            Clear
+          </button>
+        </div>
+        <form id="upload-form" enctype="multipart/form-data">
+          <input
+            type="file"
+            name="file"
+            accept="image/*"
+            class="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+          <button
+            type="submit"
+            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+          >
+            Detect Objects
+          </button>
+        </form>
+        <div id="error-msg" class="mt-4 text-red-600 text-sm hidden"></div>
+        <div id="result" class="mt-6 hidden">
+          <img
+            id="result-img"
+            class="w-full max-w-lg mx-auto border rounded"
+            alt="Detection Result"
+          />
+          <div id="detections" class="mt-4 text-sm text-gray-700"></div>
+        </div>
+      </div>
+
+      <!-- Info Section -->
+      <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+        <h3 class="text-lg font-semibold mb-2">About YOLOv10</h3>
+        <p class="text-sm text-gray-700 mb-2">
+          YOLOv10 is a next-generation, state-of-the-art object detection model
+          that offers improved accuracy, faster inference, and more stable
+          detections compared to previous YOLO versions.
+        </p>
+        <p class="text-sm text-gray-700 mb-2">
+          <strong>Best at detecting:</strong> 80 common objects including
+          people, vehicles, animals, furniture, electronics, and everyday items,
+          using the COCO pre-trained model.
+        </p>
+        <p class="text-sm text-gray-700">
+          <strong>Note:</strong> Detection performance may vary with lighting,
+          camera angle, object distance, and occlusions. Smaller or partially
+          hidden objects may be more challenging to detect accurately.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const webcamBtn = document.getElementById("webcam-btn");
+      const uploadBtn = document.getElementById("upload-btn");
+      const webcamSection = document.getElementById("webcam-section");
+      const uploadSection = document.getElementById("upload-section");
+      const uploadForm = document.getElementById("upload-form");
+      const resultDiv = document.getElementById("result");
+      const resultImg = document.getElementById("result-img");
+      const detectionsDiv = document.getElementById("detections");
+      const errorMsg = document.getElementById("error-msg");
+      const stopWebcamBtn = document.getElementById("stop-webcam");
+      const clearUploadBtn = document.getElementById("clear-upload");
+      const resetBtn = document.getElementById("reset-btn");
+      const webcamDetections = document.getElementById("webcam-detections");
+      let detectionInterval;
+
+      function setActiveMode(activeBtn) {
+        document.querySelectorAll(".mode-btn").forEach((btn) => {
+          btn.classList.remove("ring-2", "ring-blue-500");
+        });
+        activeBtn.classList.add("ring-2", "ring-blue-500");
+      }
+
+      webcamBtn.addEventListener("click", () => {
+        setActiveMode(webcamBtn);
+        webcamSection.classList.remove("hidden");
+        uploadSection.classList.add("hidden");
+        resultDiv.classList.add("hidden");
+        const container = document.getElementById("webcam-container");
+        container.innerHTML =
+          '<img src="/video_feed" class="w-full h-full object-cover" alt="Webcam Stream" />';
+        // Start polling detections
+        detectionInterval = setInterval(async () => {
+          try {
+            const response = await fetch("/detections");
+            const detections = await response.json();
+            webcamDetections.innerHTML = detections
+              .map(
+                (d) =>
+                  `<li>${d.class.charAt(0).toUpperCase() + d.class.slice(1)} #${
+                    d.id
+                  } (${(d.confidence * 100).toFixed(2)}%)${
+                    d.distance ? ` - approximately ${d.distance} m away` : ""
+                  }</li>`
+              )
+              .join("");
+          } catch (error) {
+            console.error("Error fetching detections:", error);
+          }
+        }, 1000); // Update every second
+      });
+
+      uploadBtn.addEventListener("click", () => {
+        setActiveMode(uploadBtn);
+        uploadSection.classList.remove("hidden");
+        webcamSection.classList.add("hidden");
+        resultDiv.classList.add("hidden");
+      });
+
+      stopWebcamBtn.addEventListener("click", () => {
+        const container = document.getElementById("webcam-container");
+        container.innerHTML =
+          '<p class="text-gray-500">Stream stopped. Click "Webcam Mode" to restart.</p>';
+        if (detectionInterval) {
+          clearInterval(detectionInterval);
+          detectionInterval = null;
+        }
+        webcamDetections.innerHTML = "";
+      });
+
+      clearUploadBtn.addEventListener("click", () => {
+        uploadForm.reset();
+        resultDiv.classList.add("hidden");
+        errorMsg.classList.add("hidden");
+        // Clear active state
+        document.querySelectorAll(".mode-btn").forEach((btn) => {
+          btn.classList.remove("ring-2", "ring-blue-500");
+        });
+      });
+
+      resetBtn.addEventListener("click", () => {
+        if (detectionInterval) {
+          clearInterval(detectionInterval);
+        }
+        location.reload(); // Refresh the page to fully reset
+      });
+
+      uploadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(uploadForm);
+        try {
+          const response = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+          });
+          const data = await response.json();
+          if (data.error) {
+            errorMsg.textContent = data.error;
+            errorMsg.classList.remove("hidden");
+            setTimeout(() => {
+              errorMsg.classList.add("hidden");
+            }, 2000);
+            return;
+          } else {
+            errorMsg.classList.add("hidden");
+          }
+          resultImg.src = data.image;
+          detectionsDiv.innerHTML =
+            '<h4 class="font-semibold">Detected Objects:</h4><ul>' +
+            data.detections
+              .map(
+                (d) =>
+                  `<li>${
+                    d.class.charAt(0).toUpperCase() + d.class.slice(1)
+                  } (${(d.confidence * 100).toFixed(2)}%)${
+                    d.distance ? ` - approximately ${d.distance} m away` : ""
+                  }</li>`
+              )
+              .join("") +
+            "</ul>";
+          resultDiv.classList.remove("hidden");
+
+          // Speak detections after displaying result
+          const speakText = data.detections
+            .filter((d) => d.distance)
+            .map((d) => `${d.class} approximately ${d.distance} meters away`)
+            .join(", ");
+          if (speakText && "speechSynthesis" in window) {
+            const utterance = new SpeechSynthesisUtterance(speakText);
+            window.speechSynthesis.speak(utterance);
+          }
+        } catch (error) {
+          alert("Error processing image: " + error.message);
+        }
+      });
+    </script>
+  </body>
+</html>
