@@ -7,5 +7,3 @@ torch
 torchvision
 scipy
 deep-sort-realtime
-gunicorn
-setuptools>=65.0.0
