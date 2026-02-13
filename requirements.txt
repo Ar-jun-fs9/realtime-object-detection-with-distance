@@ -8,4 +8,4 @@ torchvision
 scipy
 deep-sort-realtime
 gunicorn
-setuptools
+setuptools>=65.0.0
