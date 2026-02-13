@@ -1,10 +1,16 @@
+# ultralytics
+# opencv-python
+# flask
+# numpy
+# pyttsx3
+# torch
+# torchvision
+# scipy
+# deep-sort-realtime
 
 flask
 numpy
-torchvision
-# ultralytics
-# opencv-python
-# pyttsx3
-# torch
-# scipy
-# deep-sort-realtime
+torch==2.10.0+cpu
+torchvision==0.25.0+cpu
+opencv-python-headless
+deep-sort-realtime
