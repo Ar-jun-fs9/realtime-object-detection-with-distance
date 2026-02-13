@@ -10,7 +10,7 @@
 
 flask
 numpy
-torch==2.10.0+cpu
-torchvision==0.25.0+cpu
+torch==2.10.0
+torchvision==0.25.0
 opencv-python-headless
 deep-sort-realtime
