@@ -1,9 +1,10 @@
-ultralytics
-opencv-python
+
 flask
 numpy
-pyttsx3
-torch
 torchvision
-scipy
-deep-sort-realtime
+# ultralytics
+# opencv-python
+# pyttsx3
+# torch
+# scipy
+# deep-sort-realtime
