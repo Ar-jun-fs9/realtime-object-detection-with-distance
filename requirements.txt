@@ -8,3 +8,4 @@ torchvision
 scipy
 deep-sort-realtime
 gunicorn
+setuptools
