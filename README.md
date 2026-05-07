@@ -1,7 +1,7 @@
 <div align=center>
 <a name="top"></a>
 
-# 🧠 Real-Time Object Detection using YOLOv10, Deep SORT, and OpenCV
+#  Real-Time Object Detection using YOLOv10, Deep SORT, and OpenCV
 
 [![Python](https://img.shields.io/badge/Python-3.12.6-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.1.2-red.svg)](https://flask.palletsprojects.com/)
